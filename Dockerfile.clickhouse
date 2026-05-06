@@ -1,0 +1,41 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates dirmngr gnupg curl
+
+# Add ClickHouse Repo
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 8919F6BD2B48D754
+RUN echo "deb https://packages.clickhouse.com/deb stable main" \
+    | tee /etc/apt/sources.list.d/clickhouse.list
+
+RUN apt-get update && \
+    apt-get install -y clickhouse-server clickhouse-client
+
+# Fix permissions
+RUN mkdir -p /var/lib/clickhouse /var/log/clickhouse-server /etc/clickhouse-server && \
+    chown -R clickhouse:clickhouse /var/lib/clickhouse /var/log/clickhouse-server /etc/clickhouse-server
+
+# ✅ FIX HOME
+RUN mkdir -p /home/clickhouse && \
+    chown -R clickhouse:clickhouse /home/clickhouse
+ENV HOME=/home/clickhouse
+
+# Allow remote connections
+RUN sed -i 's/<!-- <listen_host>::<\/listen_host> -->/<listen_host>0.0.0.0<\/listen_host>/g' \
+    /etc/clickhouse-server/config.xml
+
+# Create the user and database as per script config
+# We do this by creating an XML user file in users.d
+RUN echo '<clickhouse><users><bench><password>password</password><networks><ip>::/0</ip></networks><profile>default</profile><quota>default</quota><access_management>1</access_management></bench></users></clickhouse>' \
+    > /etc/clickhouse-server/users.d/bench_user.xml
+
+# Pre-create the database
+USER clickhouse
+RUN nohup bash -c "clickhouse-server --config-file=/etc/clickhouse-server/config.xml &" && \
+    sleep 5 && \
+    clickhouse-client --query "CREATE DATABASE IF NOT EXISTS test_db"
+
+EXPOSE 8123 9000
+
+CMD ["clickhouse-server", "--config-file=/etc/clickhouse-server/config.xml"]

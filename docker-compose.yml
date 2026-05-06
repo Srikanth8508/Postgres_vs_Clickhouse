@@ -1,0 +1,46 @@
+services:
+  pg-sysbench:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: pg-sysbench
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+    networks:
+      - bench-net
+
+  ch-sysbench:
+    build:
+      context: .
+      dockerfile: Dockerfile.clickhouse
+    container_name: ch-sysbench
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    networks:
+      - bench-net
+
+  sysbench:
+    build:
+      context: .
+      dockerfile: Dockerfile.sysbench
+    container_name: sysbench
+    volumes:
+      - ./scripts:/scripts
+    depends_on:
+      - pg-sysbench
+      - ch-sysbench
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    networks:
+      - bench-net
+
+networks:
+  bench-net:
+    # Set to 'false' or remove 'external' if you want Compose to create it
+    external: true 
+    name: benchmark_1_bench-ne

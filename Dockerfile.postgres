@@ -1,0 +1,24 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y gnupg2 wget lsb-release
+
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+RUN apt-get update && apt-get install -y postgresql-15
+
+USER postgres
+
+# Initialize database, user, and password matching your Python script
+RUN /etc/init.d/postgresql start && \
+    psql --command "CREATE USER bench WITH SUPERUSER PASSWORD 'password';" && \
+    createdb -O bench benchmark_db
+
+# Enable networking
+RUN echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/15/main/pg_hba.conf
+RUN echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf
+
+EXPOSE 5432
+
+CMD ["/usr/lib/postgresql/15/bin/postgres", "-D", "/var/lib/postgresql/15/main", "-c", "config_file=/etc/postgresql/15/main/postgresql.conf"]

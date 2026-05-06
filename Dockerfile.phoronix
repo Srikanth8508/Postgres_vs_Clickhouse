@@ -1,0 +1,36 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    bzip2 \
+    xz-utils \
+    php-cli \
+    php-xml \
+    git \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    mesa-utils \
+    x11-apps \
+    libglu1-mesa \
+    libsdl2-dev \
+    build-essential \
+    python3 \
+    python3-pip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Phoronix Test Suite using installation script
+RUN cd /tmp && \
+    wget https://www.phoronix-test-suite.com/releases/phoronix-test-suite-10.8.4.tar.gz && \
+    tar -xzf phoronix-test-suite-10.8.4.tar.gz && \
+    cd phoronix-test-suite && \
+    ./install-sh
+
+# Initialize PTS
+RUN phoronix-test-suite setup pts
+
+WORKDIR /root
+CMD ["/bin/bash"]
