@@ -43,4 +43,4 @@ networks:
   bench-net:
     # Set to 'false' or remove 'external' if you want Compose to create it
     external: true 
-    name: benchmark_1_bench-ne
+    name: benchmark_1_bench-net
