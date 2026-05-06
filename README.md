@@ -45,7 +45,7 @@ docker exec -it sysbench bash
 **Test PostgreSQL connectivity:**
 
 ```bash
-psql -U postgres -d postgres -h pg-sysbench
+psql -U bench -d benchmark_db -h pg-sysbench
 ```
 
 **Test ClickHouse connectivity:**
